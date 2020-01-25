@@ -1,0 +1,69 @@
+body {
+  overflow: hidden;
+  background-color: #eee;
+}
+
+.console {
+  background-color: #ddd;
+  height: 6em;
+  font-family: Arial, Helvetica, sans-serif;
+  margin-top: 0.2em;
+  padding: 0.2em;
+}
+.container {
+  border: solid 1px black;
+  width: 500px;
+  height: 500px;
+  margin: auto;
+  padding: 0 0 0 0;
+}
+canvas {
+  top: 0;
+  left: 0;
+  padding: 0;
+}
+
+.scene {
+  position: relative;
+  width: 500px;
+  height: 500px;
+  margin: auto;
+  padding: 0;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow: hidden;
+}
+
+.car {
+  position: absolute;
+  top: -8px;
+  left: -4px;
+  width: 8px;
+  height: 16px;
+  border-radius: 2px;
+  background-color: #0066ff;
+  will-change: transform;
+}
+
+.cell {
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  width: 50px;
+  height: 50px;
+  border-radius: 2px;
+  will-change: transform;
+  will-change: background-color;
+}
+
+.car.red {
+  background-color: #ff3300;
+}
+
+.buttons {
+  position: absolute;
+  left: 0;
+  top: 0;
+}

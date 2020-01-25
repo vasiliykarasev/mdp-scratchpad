@@ -1,0 +1,16 @@
+{
+  "name": "intent-aware-long-term-prediction",
+  "version": "1.0.0",
+  "description": "",
+  "devDependencies": {
+    "chai": "*",
+    "mocha": "*",
+    "numjs": "*",
+    "string-format": "*"
+  },
+  "scripts": {
+    "test": "mocha"
+  },
+  "author": "vasiliykarasev",
+  "license": "MIT"
+}
