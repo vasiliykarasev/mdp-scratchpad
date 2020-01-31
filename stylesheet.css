@@ -15,6 +15,9 @@ body {
   font-size: 1em;
 }
 
+.container {
+  margin-left: 1em;
+}
 .container2 {
   border: solid 1px black;
   width: 500px;
