@@ -10,3 +10,13 @@ if (!String.prototype.format) {
   };
 }
 
+//nj.NdArray.toJSON = function(x) {
+//  return JSON.stringify({'shape': x.shape, 'data': x.selection.data});
+//};
+//
+//function NdArrayFromJSON(string) { 
+//  const d = JSON.parse(string);
+//  let output = nj.zeros(d.shape);
+//  output.selection.data = d.data;
+//  return output;
+//}

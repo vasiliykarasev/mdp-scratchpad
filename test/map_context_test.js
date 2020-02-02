@@ -6,7 +6,7 @@ var map_context = require('../map_context');
 
 describe('GetNeighboringCellsWithWeights(Simple)', function() {
   // Cells with size=1.
-  let map_ctx = new map_context.MapContext(window_size = 5, num_cells = 5);
+  let map_ctx = new map_context.MapInterpolator(window_size = 5, num_cells = 5);
   let cell_size = map_ctx.cell_size;
 
   for (let i = 0; i < 5; ++i) {
@@ -49,7 +49,7 @@ describe('GetNeighboringCellsWithWeights(Simple)', function() {
 });
 
 describe('GetNeighboringCellsWithWeights', function() {
-  let map_ctx = new map_context.MapContext(window_size = 10, num_cells = 5);
+  let map_ctx = new map_context.MapInterpolator(window_size = 10, num_cells = 5);
   let cell_size = map_ctx.cell_size;
 
   it(format('At({},{})', cell_size / 2.0, cell_size / 2.0), function() {
@@ -75,7 +75,7 @@ describe('GetNeighboringCellsWithWeights', function() {
 });
 
 describe('GetInterpolatedValue2D', function() {
-  let map_ctx = new map_context.MapContext(window_size = 10, num_cells = 2);
+  let map_ctx = new map_context.MapInterpolator(window_size = 10, num_cells = 2);
   let reward_map = nj.zeros([ 2, 2 ])
   let cell_size = map_ctx.cell_size;
 

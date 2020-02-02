@@ -78,6 +78,7 @@ function GetPolicyAtLocation(policy, r, c) {
   return output;
 }
 
+// Class for 'solving' an MDP using value iteration.
 class MDPSolver {
   constructor(reward_map, gamma = 0.99) {
     this.rows = reward_map.shape[0];
@@ -213,17 +214,17 @@ class MDPSolver {
   SetTerminationCallback(callback) { this.termination_callback = callback; }
 }
 
-function SaveAsJSON(numjs_array) {
-  return JSON.stringify(
-      {shape : numjs_array.shape, data : numjs_array.selection.data});
-}
-
-function ParseFromJSON(string) {
-  const d = JSON.parse(string);
-  let output = nj.zeros(d.shape);
-  output.selection.data = d.data;
-  return output;
-}
+//function SaveAsJSON(numjs_array) {
+//  return JSON.stringify(
+//      {shape : numjs_array.shape, data : numjs_array.selection.data});
+//}
+//
+//function ParseFromJSON(string) {
+//  const d = JSON.parse(string);
+//  let output = nj.zeros(d.shape);
+//  output.selection.data = d.data;
+//  return output;
+//}
 
 // This is a hack to get tests to work.
 if (typeof exports !== 'undefined') {

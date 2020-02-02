@@ -6,23 +6,47 @@ let windowHeight = scene.clientHeight;
 
 document.getElementById('solve_button').addEventListener('click', SolveMDP);
 document.getElementById('reset_button').addEventListener('click', ResetMDP);
+document.getElementById('save_button').addEventListener('click', SaveMDPToJSON);
 
-const gProtagonist = {
-  el : document.getElementsByClassName('car')[0],
-  // State parameters.
-  x : windowWidth / 2,
-  y : windowHeight / 2,
-  ux : 0,
-  uy : 0,
-};
+function CreateProtagonistElement() {
+  let el = document.createElement('div');
+  el.classList.add('car');
+  el.classList.add('red');
+  return el;
+}
+
 //
-let kNumCellsInRow = 20;
+let kNumCellsInRow = 10;
 let kCellSize = windowWidth / kNumCellsInRow;
 
-let gMapContext = new MapContext(window_size = 500, num_cells = kNumCellsInRow);
-let gMdpContext = new Context(window_size = 500, num_cells = kNumCellsInRow,
-                              num_actions = kNumActions);
+let gMdpContext = new MDPContext(window_size = 500, num_cells = kNumCellsInRow,
+                                 num_actions = kNumActions);
+
+// These are actually "supporting" classes.
+let gMapInterpolator =
+    new MapInterpolator(window_size = 500, num_cells = kNumCellsInRow);
 let gRenderer = new Renderer(scene, kNumCellsInRow, kCellSize, kNumActions);
+
+let gActor = new Actor(CreateProtagonistElement(), x = windowWidth / 2,
+                       y = windowHeight / 2);
+scene.appendChild(gActor.el);
+
+function RestoreMDPFromJSON(str) {
+  if (gRenderer) {
+    gRenderer.Clear();
+  }
+  gMdpContext = MDPContext.CreateFromJSON(str);
+  gMapInterpolator = new MapInterpolator(window_size = gMdpContext.window_size,
+                                         num_cells = gMdpContext.num_cells);
+  gRenderer = new Renderer(scene, num_cells = gMdpContext.num_cells,
+                           cell_size = gMdpContext.cell_size,
+                           num_actions = gMdpContext.num_actions);
+  // Protagonist must be added to the scene after everything else has been
+  // added!
+  gActor = new Actor(CreateProtagonistElement(), x = windowWidth / 2,
+                     y = windowHeight / 2);
+  scene.appendChild(gActor.el);
+}
 
 function ResetMDP() {
   console.log("ResetMDP");
@@ -65,14 +89,14 @@ function MouseoverCallback(e) {
   const kOffsetTop = document.getElementById('scene_container').offsetTop;
   let x = e.clientX - kOffsetLeft;
   let y = e.clientY - kOffsetTop;
-  let cell_index = gMapContext.GetCellIndexAt(x, y);
+  let cell_index = gMapInterpolator.GetCellIndexAt(x, y);
   if (cell_index != null) {
-    gRenderer.highlighted_cell_index = cell_index;
+    gRenderer.SetHighlightedCellIndex(cell_index);
     if (e.buttons) {
       MousedownCallback(e);
     }
   } else {
-    gRenderer.highlighted_cell_index = -1;
+    gRenderer.SetHighlightedCellIndex(-1);
   }
 }
 
@@ -95,6 +119,7 @@ function MouseDoubleclickCallback(e) {
 
 function SolveMDP() {
   console.log("SolveMDP");
+  gActor.speed = 0.0;
   let solver = new MDPSolver(gMdpContext.reward_map, gamma = gMdpContext.gamma);
   solver.SetIterationCallback(function(s) {
     if (s.current_iteration % 10 == 5) {
@@ -108,10 +133,43 @@ function SolveMDP() {
     msg = 'Finished solving the MDP!';
     gTextConsole.Update(msg);
     gMdpContext.policy_map = s.policy_map;
-    gMdpContext.velocity = 2.5;
+    gActor.speed = 2.5;
   });
-
   solver.SolveAsyncWithInterval(interval = 0.01);
+}
+
+function LoadMDPFromFile() {
+  let input = document.getElementById('load_mdp_input');
+  if (!input.files) {
+    console.log("No support for file loading.");
+    return;
+  }
+  if (!input.files[0]) {
+    console.log("No files selected.");
+    return;
+  }
+  var data = '';
+  let file = input.files[0];
+  gTextConsole.Update("Trying to load a MDP from '" + file.name + "'");
+
+  let file_reader = new FileReader();
+  file_reader.onload = ReceivedText;
+  file_reader.readAsText(file);
+
+  function ReceivedText(e) { RestoreMDPFromJSON(e.target.result); }
+}
+
+function SaveMDPToJSON() {
+  console.log("SaveMDPToJSON");
+  gTextConsole.Update("Trying to save a MDP...");
+
+  const contents = gMdpContext.ToJSON();
+
+  var a = document.createElement('a');
+  a.setAttribute('href', 'data:text/plain;charset=utf-u,' +
+                             encodeURIComponent(contents));
+  a.setAttribute('download', "mdp.json");
+  a.click();
 }
 
 window.addEventListener('mousemove', MouseoverCallback);
@@ -120,44 +178,40 @@ window.addEventListener('dblclick', MouseDoubleclickCallback);
 
 function render(ms) {
   setTimeout(() => { requestAnimationFrame(render); }, 32);
+
+  // The reward map basically never changes, so we technically do not need to
+  // redraw it over and over again.
   gRenderer.RenderRewardMap(gMdpContext.reward_map, gMdpContext.goal_x,
                             gMdpContext.goal_y);
+  // If we draw this, then we also need to un-highlighted previously highlighted
+  // cells.
+  gRenderer.RenderHighlightedCell();
+
+  // This only needs to be drawn while the MDP is being solved (after it's
+  // solved, these remain constant...)
   gRenderer.RenderActionProbabilities(gMdpContext.policy_map);
 
-  gRenderer.RenderProtagonist(gProtagonist);
+  // Always need to be drawn.
+  gRenderer.RenderProtagonist(gActor);
 }
 
 requestAnimationFrame(render);
 
 function UpdateAgentState() {
   // Choose best action.
-  let x = gProtagonist.x;
-  let y = gProtagonist.y;
+  let x = gActor.x;
+  let y = gActor.y;
 
   // Here we should actually sample from the distribution.
   let actions_probs =
-      gMapContext.GetInterpolatedValue3D(gMdpContext.policy_map, x, y).tolist();
+      gMapInterpolator.GetInterpolatedValue3D(gMdpContext.policy_map, x, y)
+          .tolist();
   let sample_idx = SampleFromDistribution(actions_probs);
   let u = DecodeAction(sample_idx);
 
   // Update car state.
-  gProtagonist.x += u[0] * gMdpContext.velocity;
-  gProtagonist.y += u[1] * gMdpContext.velocity;
-  gProtagonist.ux = u[0];
-  gProtagonist.uy = u[1];
-  // console.log(x);
-  // console.log(y);
+  gActor.SetAction(ux = u[0], uy = u[1]);
+  gActor.Update();
 }
 
-setInterval(() => {
-  UpdateAgentState();
-
-  if (gMdpContext.velocity > 0) {
-    let x = gProtagonist.x;
-    let y = gProtagonist.y;
-    let reward =
-        gMapContext.GetInterpolatedValue2D(gMdpContext.reward_map, x, y);
-    msg = 'at (x={0}, y={1}), reward={2}'.format(x, y, reward);
-    gTextConsole.Update(msg);
-  }
-}, 10);
+setInterval(() => { UpdateAgentState(); }, 10);

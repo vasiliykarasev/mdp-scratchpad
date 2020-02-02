@@ -1,7 +1,8 @@
 // Class with utility functions for going back and forth between discrete
 // coordinates (e.g. indices of various MDP artifacts) and 'continuous'
 // coordinates (e.g. actors' locations).
-class MapContext {
+// TODO(vasiliy): this is kind of a misnomer - not really a context...
+class MapInterpolator {
   constructor(window_size, num_cells) {
     this.window_size = window_size;
     this.num_cells_in_row = num_cells;
@@ -115,6 +116,6 @@ function SampleFromDistribution(pdf) {
 
 // This is a hack to get tests to work.
 if (typeof exports !== 'undefined') {
-  exports.MapContext = MapContext;
+  exports.MapInterpolator = MapInterpolator;
   exports.SampleFromDistribution = SampleFromDistribution;
 }
