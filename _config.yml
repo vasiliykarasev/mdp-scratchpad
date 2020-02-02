@@ -1,0 +1,11 @@
+# Site settings
+title: MDP Scratchpad!!
+email: karasev00@gmail.com
+description: > # this means to ignore newlines until "baseurl:"
+  A scratch pad for simple Markov decision processes.
+baseurl: "" # the subpath of your site, e.g. /blog
+url: "https://vasiliykarasev.github.io/mdp-scratchad"
+github_username: vasiliykarasev
+
+# Build settings
+markdown: kramdown

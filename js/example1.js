@@ -8,6 +8,8 @@ document.getElementById('solve_button').addEventListener('click', SolveMDP);
 document.getElementById('reset_button').addEventListener('click', ResetMDP);
 document.getElementById('save_button').addEventListener('click', SaveMDPToJSON);
 
+window.onload = Spin;
+
 function CreateProtagonistElement() {
   let el = document.createElement('div');
   el.classList.add('car');
@@ -16,87 +18,98 @@ function CreateProtagonistElement() {
 }
 
 //
-let kNumCellsInRow = 10;
-let kCellSize = windowWidth / kNumCellsInRow;
+let num_cells_in_row = 10;
+let map_interpolator = null;
+let renderer = null;
+let actor = null;
+let mdp_context = null;
+let gTextConsole = new TextConsole('text_console', max_num_lines = 5);
 
-let gMdpContext = new MDPContext(window_size = 500, num_cells = kNumCellsInRow,
-                                 num_actions = kNumActions);
-
-// These are actually "supporting" classes.
-let gMapInterpolator =
-    new MapInterpolator(window_size = 500, num_cells = kNumCellsInRow);
-let gRenderer = new Renderer(scene, kNumCellsInRow, kCellSize, kNumActions);
-
-let gActor = new Actor(CreateProtagonistElement(), x = windowWidth / 2,
-                       y = windowHeight / 2);
-scene.appendChild(gActor.el);
+ResetMDP();
 
 function RestoreMDPFromJSON(str) {
-  if (gRenderer) {
-    gRenderer.Clear();
+  if (renderer) {
+    renderer.Clear();
   }
-  gMdpContext = MDPContext.CreateFromJSON(str);
-  gMapInterpolator = new MapInterpolator(window_size = gMdpContext.window_size,
-                                         num_cells = gMdpContext.num_cells);
-  gRenderer = new Renderer(scene, num_cells = gMdpContext.num_cells,
-                           cell_size = gMdpContext.cell_size,
-                           num_actions = gMdpContext.num_actions);
-  // Protagonist must be added to the scene after everything else has been
-  // added!
-  gActor = new Actor(CreateProtagonistElement(), x = windowWidth / 2,
-                     y = windowHeight / 2);
-  scene.appendChild(gActor.el);
+  mdp_context = MDPContext.CreateFromJSON(str);
+  UpdateNumCells(mdp_context.num_cells);
+  ResetHelperClasses(mdp_context);
+}
+
+function ResetHelperClasses(mdp_context) {
+  map_interpolator =
+      new MapInterpolator(mdp_context.window_size, mdp_context.num_cells);
+  renderer = new Renderer(scene, mdp_context.num_cells, mdp_context.cell_size,
+                          mdp_context.num_actions);
+  // Actor must be added to the scene after everything else has been added!
+  actor =
+      new Actor(CreateProtagonistElement(), windowWidth / 2, windowHeight / 2);
+  scene.appendChild(actor.el);
 }
 
 function ResetMDP() {
   console.log("ResetMDP");
-  gMdpContext.ResetMDP();
+  mdp_context = new MDPContext(/*window_size=*/windowWidth,
+                               /*num_cells=*/num_cells_in_row,
+                               /*num_actions=*/kNumActions);
+  ResetHelperClasses(mdp_context);
+
   if (gTextConsole) {
     gTextConsole.Update("Resetting MDP.");
   }
 }
 
-gTextConsole = new TextConsole('text_console', max_num_lines = 5);
-
-ResetMDP();
-
 document.getElementById('show_action_probability_checkbox')
     .addEventListener('change', function() {
       if (this.checked) {
-        gRenderer.LoadActionProbabilities();
+        renderer.LoadActionProbabilities();
       } else {
-        gRenderer.ClearActionProbabilities();
+        renderer.ClearActionProbabilities();
       }
     });
 
 function UpdateGamma(value) {
   document.getElementById('gamma_range_control_label').innerHTML =
       'gamma: ' + Number(value).toFixed(3, 3);
-  gMdpContext.gamma = Number(value);
+  mdp_context.gamma = Number(value);
+}
+
+function UpdateNumCells(value) {
+  document.getElementById('num_cells_range_control_label').innerHTML =
+      '# cells: ' + Number(value);
+  num_cells_in_row = Number(value);
 }
 
 document.getElementById('gamma_range_control')
     .addEventListener('input', function() { UpdateGamma(this.value); });
-
 document.getElementById('gamma_range_control')
     .addEventListener('change', function() { UpdateGamma(this.value); });
-
 document.getElementById('gamma_range_control').value = 0.99;
 UpdateGamma(document.getElementById('gamma_range_control').value);
+
+document.getElementById('num_cells_range_control')
+    .addEventListener('input', function() { UpdateNumCells(this.value); });
+document.getElementById('num_cells_range_control')
+    .addEventListener('change', function() {
+      UpdateNumCells(this.value);
+      ResetMDP();
+    });
+document.getElementById('num_cells_range_control').value = 10;
+UpdateNumCells(document.getElementById('num_cells_range_control').value);
 
 function MouseoverCallback(e) {
   const kOffsetLeft = document.getElementById('scene_container').offsetLeft;
   const kOffsetTop = document.getElementById('scene_container').offsetTop;
   let x = e.clientX - kOffsetLeft;
   let y = e.clientY - kOffsetTop;
-  let cell_index = gMapInterpolator.GetCellIndexAt(x, y);
+  let cell_index = map_interpolator.GetCellIndexAt(x, y);
   if (cell_index != null) {
-    gRenderer.SetHighlightedCellIndex(cell_index);
+    renderer.SetHighlightedCellIndex(cell_index);
     if (e.buttons) {
       MousedownCallback(e);
     }
   } else {
-    gRenderer.SetHighlightedCellIndex(-1);
+    renderer.SetHighlightedCellIndex(-1);
   }
 }
 
@@ -106,7 +119,7 @@ function MousedownCallback(e) {
   const kOffsetTop = document.getElementById('scene_container').offsetTop;
   let x = e.clientX - kOffsetLeft;
   let y = e.clientY - kOffsetTop;
-  gMdpContext.UpdateReward(x, y);
+  mdp_context.UpdateReward(x, y);
 }
 
 function MouseDoubleclickCallback(e) {
@@ -114,26 +127,32 @@ function MouseDoubleclickCallback(e) {
   const kOffsetTop = document.getElementById('scene_container').offsetTop;
   let x = e.clientX - kOffsetLeft;
   let y = e.clientY - kOffsetTop;
-  gMdpContext.UpdateGoalLocation(x, y);
+  mdp_context.UpdateGoalLocation(x, y);
 }
 
 function SolveMDP() {
   console.log("SolveMDP");
-  gActor.speed = 0.0;
-  let solver = new MDPSolver(gMdpContext.reward_map, gamma = gMdpContext.gamma);
+  actor.speed = 0.0;
+  let solver = new MDPSolver(mdp_context.reward_map, gamma = mdp_context.gamma);
+  // A heuristic.
+  solver.max_num_iterations =
+      num_cells_in_row * num_cells_in_row * num_cells_in_row;
   solver.SetIterationCallback(function(s) {
     if (s.current_iteration % 10 == 5) {
-      msg = 'Per-element difference in the value map: {0}'.format(
-          s.diff_per_element.toFixed(4, 4));
-      gMdpContext.policy_map = s.policy_map;
+      msg = 'On iteration {0}. Per-element difference in the value map: {1}'
+                .format(s.current_iteration, s.diff_per_element.toFixed(4, 4));
+      mdp_context.policy_map = s.policy_map;
       gTextConsole.Update(msg);
     }
   });
   solver.SetTerminationCallback(function(s) {
-    msg = 'Finished solving the MDP!';
+    msg =
+        'Finished solving the MDP. Current iteration is {0}/{1}, and diff-per-element is: {2}'
+            .format(s.current_iteration, s.max_num_iterations,
+                    s.diff_per_element.toFixed(4, 4));
     gTextConsole.Update(msg);
-    gMdpContext.policy_map = s.policy_map;
-    gActor.speed = 2.5;
+    mdp_context.policy_map = s.policy_map;
+    actor.speed = 0.5;
   });
   solver.SolveAsyncWithInterval(interval = 0.01);
 }
@@ -163,7 +182,7 @@ function SaveMDPToJSON() {
   console.log("SaveMDPToJSON");
   gTextConsole.Update("Trying to save a MDP...");
 
-  const contents = gMdpContext.ToJSON();
+  const contents = mdp_context.ToJSON();
 
   var a = document.createElement('a');
   a.setAttribute('href', 'data:text/plain;charset=utf-u,' +
@@ -181,37 +200,26 @@ function render(ms) {
 
   // The reward map basically never changes, so we technically do not need to
   // redraw it over and over again.
-  gRenderer.RenderRewardMap(gMdpContext.reward_map, gMdpContext.goal_x,
-                            gMdpContext.goal_y);
+  renderer.RenderRewardOnly(mdp_context.reward_map);
+  renderer.RenderGoal(mdp_context.goal_x, mdp_context.goal_y);
   // If we draw this, then we also need to un-highlighted previously highlighted
   // cells.
-  gRenderer.RenderHighlightedCell();
+  renderer.RenderHighlightedCell();
 
   // This only needs to be drawn while the MDP is being solved (after it's
   // solved, these remain constant...)
-  gRenderer.RenderActionProbabilities(gMdpContext.policy_map);
+  renderer.RenderActionProbabilities(mdp_context.policy_map);
 
   // Always need to be drawn.
-  gRenderer.RenderProtagonist(gActor);
+  renderer.RenderProtagonist(actor);
 }
-
-requestAnimationFrame(render);
 
 function UpdateAgentState() {
-  // Choose best action.
-  let x = gActor.x;
-  let y = gActor.y;
-
-  // Here we should actually sample from the distribution.
-  let actions_probs =
-      gMapInterpolator.GetInterpolatedValue3D(gMdpContext.policy_map, x, y)
-          .tolist();
-  let sample_idx = SampleFromDistribution(actions_probs);
-  let u = DecodeAction(sample_idx);
-
-  // Update car state.
-  gActor.SetAction(ux = u[0], uy = u[1]);
-  gActor.Update();
+  actor.ChooseAction(map_interpolator, mdp_context.policy_map);
+  actor.Update();
 }
 
-setInterval(() => { UpdateAgentState(); }, 10);
+function Spin() {
+  setInterval(() => { UpdateAgentState(); }, 10);
+  requestAnimationFrame(render);
+}

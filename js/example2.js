@@ -1,7 +1,8 @@
 const canvas = document.getElementsByTagName('canvas')[0];
 const ctx = canvas.getContext('2d');
 const scene = document.getElementsByClassName('scene')[0];
-let kNumActors = 4;
+document.getElementById('actor_add').addEventListener('click', AddActor);
+document.getElementById('actor_remove').addEventListener('click', RemoveActor);
 
 let mdp_collection = [];
 let policy_maps = [];
@@ -30,12 +31,13 @@ document.getElementById('epsilon_range_control').value = 5e-3;
 UpdateEpsilon(document.getElementById('epsilon_range_control').value);
 
 function LoadMDPs() {
+  // An unusual storage place, but it will hae to do.
   const kMdpFilenames = [
-    'data/mdp_1.json',
-    'data/mdp_2.json',
-    'data/mdp_3.json',
-    'data/mdp_4.json',
-    'data/mdp_5.json',
+    'https://newyorksky.live.s3.us-east-1.amazonaws.com/mdp/data/60/mdp_60_6.json',
+    'https://newyorksky.live.s3.us-east-1.amazonaws.com/mdp/data/60/mdp_60_7.json',
+    'https://newyorksky.live.s3.us-east-1.amazonaws.com/mdp/data/60/mdp_60_8.json',
+    'https://newyorksky.live.s3.us-east-1.amazonaws.com/mdp/data/60/mdp_60_9.json',
+    'https://newyorksky.live.s3.us-east-1.amazonaws.com/mdp/data/60/mdp_60_10.json',
   ];
   for (let i = 0; i < kMdpFilenames.length; ++i) {
     $.ajax({
@@ -61,31 +63,43 @@ function LoadMDPs() {
           renderer = new Renderer(scene, num_cells, cell_size, num_actions);
           // Protagonist must be added to the scene after everything else has
           // been added!
-          for (let i = 0; i < kNumActors; ++i) {
-            const x = Math.random() * scene.clientWidth;
-            const y = Math.random() * scene.clientHeight;
-            const rgb = [
-              Math.floor(Math.random() * 256),
-              Math.floor(Math.random() * 256),
-              Math.floor(Math.random() * 256),
-            ];
-            const goal_switching_probability =
-                document.getElementById('epsilon_range_control').value;
-
-            const actor = new GoalSwitchingActor(
-                CreateActorElement(rgb), x, y,
-                /*num_goals=*/policy_maps.length,
-                /*goal_switching_probability=*/goal_switching_probability);
-            actor.speed = 0.5;
-            scene.appendChild(actor.el);
-            actors.push(actor);
-          }
+          // By default we only add a single actor.
+          AddActor();
           // Now that everything has been initialized we can launch the loop.
           Spin();
         }
       }
     });
   }
+}
+
+function AddActor() {
+  const x = Math.random() * scene.clientWidth;
+  const y = Math.random() * scene.clientHeight;
+  const rgb = [
+    Math.floor(Math.random() * 256),
+    Math.floor(Math.random() * 256),
+    Math.floor(Math.random() * 256),
+  ];
+  const goal_switching_probability =
+      document.getElementById('epsilon_range_control').value;
+
+  const actor = new GoalSwitchingActor(
+      CreateActorElement(rgb), x, y,
+      /*num_goals=*/policy_maps.length,
+      /*goal_switching_probability=*/goal_switching_probability);
+  actor.speed = 0.5;
+  scene.appendChild(actor.el);
+  actors.push(actor);
+}
+
+function RemoveActor() {
+  if (actors.length == 0) {
+    return;
+  }
+  let actor = actors.pop();
+  console.log(actor);
+  scene.removeChild(actor.el);
 }
 
 window.onload = LoadMDPs;

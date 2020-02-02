@@ -2,7 +2,7 @@ var assert = require('chai').assert;
 var expect = require('chai').expect;
 var nj = require('numjs');
 const format = require('string-format')
-var mdp = require('../mdp');
+var mdp = require('../js/mdp');
 
 function norm(x, y) {
   let diff = x.subtract(y);
@@ -54,18 +54,5 @@ describe('MDPSolver', function() {
     expect(policy.get(action_idx))
         .to.be.greaterThan(
             0.99, 'In this state, best action should be to move right.');
-  });
-});
-
-describe('JSONconversions', function() {
-  it('Identity2D', function() {
-    let x = nj.random([ 3, 4 ]);
-    let y = mdp.ParseFromJSON(mdp.SaveAsJSON(x));
-    assert.equal(0.0, norm(x, y));
-  });
-  it('Identity3D', function() {
-    let x = nj.random([ 3, 4, 3 ]);
-    let y = mdp.ParseFromJSON(mdp.SaveAsJSON(x));
-    assert.equal(0.0, norm(x, y));
   });
 });

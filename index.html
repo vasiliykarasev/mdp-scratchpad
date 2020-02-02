@@ -1,48 +1,48 @@
-<!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta property="og:title" content="Experiments with MDPs">
-    <title>Experiments with MDPs</title>
-    <script src="https://cdn.jsdelivr.net/gh/nicolaspanel/numjs@0.15.1/dist/numjs.min.js"></script>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
-    <link rel="stylesheet" href="stylesheet.css">
-  </head>
-  <body>
+---
+layout: default
+---
 
-<nav class="navbar navbar-expand-lg navbar-light bg-light">
-  <a class="navbar-brand" href="index.html">MDP Scratchpad!</a>
-  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-    <span class="navbar-toggler-icon"></span>
-  </button>
+<script type="text/javascript" id="MathJax-script" async                        
+  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">            
+</script> 
 
-  <div class="collapse navbar-collapse" id="navbarSupportedContent">
-    <ul class="navbar-nav mr-auto">
-      <li class="nav-item active">
-        <a class="nav-link" href="index.html">Home <span class="sr-only">(current)</span></a>
-      </li>
-      <li class="nav-item dropdown">
-        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-          Examples
-        </a>
-        <div class="dropdown-menu" aria-labelledby="navbarDropdown">
-          <a class="dropdown-item" href="example1.html">Simple MDP example</a>
-        </div>
-      </li>
-    </ul>
-  </div>
-</nav>
-    
-<div class="container">
-  <h2>Welcome to the MDP Scratchpad!</h2>
+This website consists of a collection of interactive visualizations about Markov decision processes.<p><p>
 
-</div>
+A Markov decision process (MDP) can be used to represent stochastic dynamical systems,
+and is represented by a tuple \((X, U, R, P)\), where \(X\) is the state-space,
+\(U\) is a set of actions, \(R\) is a "reward" function, and \(P\) is a description of stochastic dynamics.<br>
+The objective is a to find a policy \(\pi\ : X \rightarrow U\) that maximizes
+the sum of rewards over an infinite time horizon (discounted by \(\gamma\)):
+$$
+\max_{\pi} \mathbb{E}_{u_t \sim \pi(x_t) ,~~  x_{t+1} \sim P(x_{t+1}|x_t, u_t)}\big[ \sum_{t=0}^{\infty} \gamma^t R(x_t, u_t) \big]
+$$
 
-      <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
-<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+This is a very general formulation.<p>
+<p>
 
-    </div>
-  </body>
-</html>
+Examples on this website deal with cases that appeal to a robotics interpretation.<br> 
+The state space \(X\) is a discretization of \(\mathbb{R}^2\), \(U\) is a "move direction" (i.e. a discretization of \([0, 2\pi)\) interval), together with a "stay" action, and \(P\) can be summarized by \(x_{t+1} = x_t + u_t\) (possibly with a possibility of ending up in adjacent, but not desired cell).<br>
+
+This is a common way to introduce MDPs which avoids most abstractions and has an easy interpretation: "a robot is navigating in the (grid-)world, and the desired action will not necessarily take it to the desired destination).<br>
+
+When the reward is negative for all \(x\) except some special goal state:
+$$ R(x, u) = \begin{cases} 
+0 &\text{ if } x = x_{goal} \text{ and } u = 0 \\
+< 0 &\text{ o.w. } \end{cases}
+$$
+then the MDP describes a stochastic shortest path problem.
+<br>
+
+This is the scenario shown in this interactive visualization: <a href="example1.html">Single MDP / Single goal</a>.
+<p>
+<p>
+
+Behavior of an actor following an optimal policy \(\pi^*\) is:
+$$
+x_{t+1} = x_t + u_t \text{ where } u_t \sim \pi^*(x_t)
+$$
+
+The situation is more interesting if they instead have a set of optimal policies \(\{\pi_1, \dots \pi_N\}\) (each a solution to a particular MDP), are following one of them, and are infrequently switching among them.
+This is shown in the second visualization: <a href="example2.html">Multiple MDP / Multiple goals</a>.
+<p>
+

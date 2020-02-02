@@ -8,6 +8,17 @@ class Actor {
     this.uy = 0;
   }
 
+  // Selects the action from the policy.
+  ChooseAction(interpolator, policy_map) {
+    const actions_probs =
+        interpolator.GetInterpolatedValue3D(policy_map, this.x, this.y)
+            .tolist();
+    const sample_idx = SampleFromDistribution(actions_probs);
+    const u = DecodeAction(sample_idx);
+    this.SetAction(u[0], u[1]);
+  }
+
+
   // Sets the current action.
   SetAction(ux, uy) {
     if (this.speed == 0) {
@@ -38,14 +49,10 @@ class GoalSwitchingActor extends Actor {
     console.log(goal_switching_probability);
   }
 
+  // Selects the action from a collection of policies, according to the 
+  // currently selected goal.
   ChooseAction(interpolator, policy_maps) {
-    const policy_map = policy_maps[this.current_goal_index];
-    const actions_probs =
-        interpolator.GetInterpolatedValue3D(policy_map, this.x, this.y)
-            .tolist();
-    const sample_idx = SampleFromDistribution(actions_probs);
-    const u = DecodeAction(sample_idx);
-    super.SetAction(u[0], u[1]);
+    super.ChooseAction(interpolator, policy_maps[this.current_goal_index]);
   }
 
   Update() {

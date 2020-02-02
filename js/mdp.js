@@ -214,18 +214,6 @@ class MDPSolver {
   SetTerminationCallback(callback) { this.termination_callback = callback; }
 }
 
-//function SaveAsJSON(numjs_array) {
-//  return JSON.stringify(
-//      {shape : numjs_array.shape, data : numjs_array.selection.data});
-//}
-//
-//function ParseFromJSON(string) {
-//  const d = JSON.parse(string);
-//  let output = nj.zeros(d.shape);
-//  output.selection.data = d.data;
-//  return output;
-//}
-
 // This is a hack to get tests to work.
 if (typeof exports !== 'undefined') {
   exports.MDPSolver = MDPSolver;
@@ -234,6 +222,4 @@ if (typeof exports !== 'undefined') {
   exports.kNumActions = kNumActions;
   exports.Softmax = Softmax;
   exports.GetPolicyAtLocation = GetPolicyAtLocation;
-  exports.SaveAsJSON = SaveAsJSON;
-  exports.ParseFromJSON = ParseFromJSON;
 }

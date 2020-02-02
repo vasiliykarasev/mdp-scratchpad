@@ -17,7 +17,8 @@ class Renderer {
       this.scene.appendChild(this.cells[i].el);
     }
     // Load action probabilities.
-    // this.LoadActionProbabilities();
+    this.action_probabilities = [];
+    //this.LoadActionProbabilities();
   }
 
   Clear() {
@@ -122,36 +123,15 @@ class Renderer {
     this.RenderGridCell(this.cells[this.highlighted_cell_index], rgb);
   }
 
-  RenderRewardMap(reward_map, goal_x, goal_y) {
-    // var t0 = performance.now();
-
-    let i = 0;
-    for (let i = 0; i < this.cells.length; ++i) {
-      let value = reward_map.selection.data[i];
-      let rgb = [ 100, 100, 100 ];
-
-      rgb[0] += 10 * value;
-      rgb[1] += 10 * value;
-      rgb[2] += 10 * value;
-
-      this.RenderGridCell(this.cells[i], rgb);
-    }
-    // Always draw the goal cell.
-    let goal_idx = goal_x + this.num_cells_in_row * goal_y;
-    this.RenderGridCell(this.cells[goal_idx], [ 0, 200, 0 ]);
-    // var t1 = performance.now();
-    // console.log("Call to doSomething took " + (t1 - t0) + " milliseconds.");
-  }
-
   RenderRewardOnly(reward_map) {
     let i = 0;
     for (let i = 0; i < this.cells.length; ++i) {
       let value = reward_map.selection.data[i];
       let rgb = [ 100, 100, 100 ];
 
-      rgb[0] += 10 * value;
-      rgb[1] += 10 * value;
-      rgb[2] += 10 * value;
+      rgb[0] += value;
+      rgb[1] += value;
+      rgb[2] += value;
 
       this.RenderGridCell(this.cells[i], rgb);
     }
