@@ -1,11 +1,22 @@
+// Requires map_interpolator.js
+
+// A base class representing an entity.
 class Actor {
   constructor(el, x, y) {
+    // Element in the scene.
     this.el = el;
+    // Current location.
     this.x = x;
     this.y = y;
+    // Move speed.
     this.speed = 0.0;
+    // Move direction.
     this.ux = 0;
     this.uy = 0;
+  }
+
+  Clone() {
+    return Object.assign( Object.create( Object.getPrototypeOf(this)), this);
   }
 
   // Selects the action from the policy.
@@ -39,6 +50,7 @@ class Actor {
   }
 };
 
+// An entity that switches goals at each step.
 class GoalSwitchingActor extends Actor {
   constructor(el, x, y, num_goals, goal_switching_probability = 0.0) {
     super(el, x, y);
@@ -47,6 +59,10 @@ class GoalSwitchingActor extends Actor {
     // Select a goal uniformly at random:
     this.current_goal_index = Math.floor(Math.random() * num_goals);
     console.log(goal_switching_probability);
+  }
+  
+  Clone() {
+    return Object.assign( Object.create( Object.getPrototypeOf(this)), this);
   }
 
   // Selects the action from a collection of policies, according to the 
@@ -75,4 +91,19 @@ class GoalSwitchingActor extends Actor {
     const sampled_index = Math.floor(Math.random() * (this.num_goals - 1));
     this.current_goal_index = alternative_goal_index[sampled_index];
   }
+}
+
+// Samples an actor's trajectory for the given number of steps and returns it.
+function SampleActorTrajectory(_actor, interpolator, policy_map, num_steps=10) {
+  let actor = _actor.Clone();
+  let output = [];
+  // This is a hack... basically unless we multiply by a huge number here 
+  // we need to maintain a very long trajectory (expensive to render).
+  actor.speed *= 10;
+  for (let i = 0; i < num_steps; ++i) {
+    actor.ChooseAction(interpolator, policy_map);
+    actor.Update();
+    output.push({x: actor.x, y: actor.y});
+  }
+  return output;
 }

@@ -1,11 +1,17 @@
 class Renderer {
-  constructor(scene, num_cells_in_row, cell_size, num_actions) {
+  constructor(scene, num_cells_in_row, cell_size, num_actions,
+              num_trajectories=10,
+              trajectory_length=20) {
     this.scene = scene;
     this.num_cells_in_row = num_cells_in_row;
     this.cell_size = cell_size;
     this.num_actions = num_actions;
     this.highlighted_cell_index = -1;
     this.previous_highlighted_cell_indices = [];
+
+    this.num_trajectories = num_trajectories;
+    this.trajectory_length = trajectory_length;
+
     for (let i = 0; i < num_cells_in_row * num_cells_in_row; ++i) {
       this.previous_highlighted_cell_indices.push(i);
     }
@@ -18,11 +24,14 @@ class Renderer {
     }
     // Load action probabilities.
     this.action_probabilities = [];
-    //this.LoadActionProbabilities();
+    // this.LoadActionProbabilities();
+    this.trajectory_collection = [];
+    this.LoadTrajectoryCollection();
   }
 
   Clear() {
     this.ClearActionProbabilities();
+    this.ClearTrajectoryCollection();
     while (this.scene.children.length > 0) {
       this.scene.removeChild(this.scene.children[0]);
     }
@@ -81,9 +90,9 @@ class Renderer {
           const u = DecodeAction(k);
           const theta = Math.atan2(u[1], u[0]);
 
-          const el = document.createElement('div');
-          el.classList.add('line');
-          // scene.insertBefore(el, gCar.el);
+          const el = CreateLineElement();
+          // TODO(vasiliy): split out this garbage into a function that creates
+          // a line element.
           let line =
               {x : j * cell_size, y : i * cell_size, theta : theta, el : el};
           const length = cell_size / 2.0 - 2;
@@ -104,6 +113,76 @@ class Renderer {
       }
     }
     return action_probabilities;
+  }
+
+  LoadTrajectoryCollection() {
+    console.log("Loading trajectory collection.");
+    this.ClearTrajectoryCollection();
+    this.trajectory_collection = Renderer.CreateTrajectoryCollection(
+        this.trajectory_length, this.num_trajectories);
+    for (let i = 0; i < this.trajectory_collection.length; ++i) {
+      for (let j = 0; j < this.trajectory_collection[i].length; ++j) {
+        this.scene.appendChild(this.trajectory_collection[i][j]);
+      }
+    }
+  }
+
+  ClearTrajectoryCollection() {
+    if (!this.trajectory_collection) {
+      return;
+    }
+    for (let i = 0; i < this.trajectory_collection.length; ++i) {
+      for (let j = 0; j < this.trajectory_collection[i].length; ++j) {
+        let el = this.trajectory_collection[i][j];
+        el.parentNode.removeChild(el);
+      }
+    }
+    this.trajectory_collection = [];
+  }
+
+  // Returns a collection (an array) of trajectories.
+  // Each trajectory is simply a collection of short straight lines -- this
+  // collection is meant to approximate an arbitrary curved line.
+  static CreateTrajectoryCollection(trajectory_length, num_trajectories) {
+    let trajectory_bundle = [];
+    for (let j = 0; j < num_trajectories; ++j) {
+      let trajectory = [];
+      for (let k = 0; k < trajectory_length; ++k) {
+        let line = CreateLineElement();
+        line.style.opacity = 0.25;
+        trajectory.push(line);
+      }
+      trajectory_bundle.push(trajectory);
+    }
+    return trajectory_bundle;
+  }
+
+  RenderOneTrajectory(trajectory_data, index) {
+    if (!this.trajectory_collection ||
+        index >= this.trajectory_collection.length) {
+      return;
+    }
+    Renderer.RenderTrajectory(trajectory_data,
+                              this.trajectory_collection[index]);
+  }
+
+  static RenderTrajectory(trajectory_data, trajectory_line_elements) {
+    console.assert(trajectory_data.length <= trajectory_line_elements.length);
+    if (trajectory_data.length == 0) {
+      return;
+    }
+
+    for (let i = 1; i < trajectory_data.length; ++i) {
+      let x2 = trajectory_data[i].x;
+      let y2 = trajectory_data[i].y;
+      let x1 = trajectory_data[i - 1].x;
+      let y1 = trajectory_data[i - 1].y;
+      let el = trajectory_line_elements[i];
+      SetLineTransform(el, x1, x2, y1, y2);
+      //line.el.style.opacity = '0.25';
+    }
+    // TODO(vasiliy): handle cases where line_elements.size() !=
+    // trajectory_data.size().
   }
 
   // Renders the main entity.
@@ -170,3 +249,5 @@ class Renderer {
     line.el.style.backgroundColor = `rgb(${action_prob * 255.0}, 0, 0)`;
   }
 };
+
+

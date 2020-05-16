@@ -49,9 +49,9 @@ function ResetHelperClasses(mdp_context) {
 
 function ResetMDP() {
   console.log("ResetMDP");
-  mdp_context = new MDPContext(/*window_size=*/windowWidth,
-                               /*num_cells=*/num_cells_in_row,
-                               /*num_actions=*/kNumActions);
+  mdp_context = new MDPContext(/*window_size=*/ windowWidth,
+                               /*num_cells=*/ num_cells_in_row,
+                               /*num_actions=*/ kNumActions);
   ResetHelperClasses(mdp_context);
 
   if (gTextConsole) {
@@ -217,6 +217,14 @@ function render(ms) {
 function UpdateAgentState() {
   actor.ChooseAction(map_interpolator, mdp_context.policy_map);
   actor.Update();
+
+  // Render several samples of agent's future trajectory.
+  for (let i = 0; i < renderer.num_trajectories; ++i) {
+    let trajectory =
+        SampleActorTrajectory(actor, map_interpolator, mdp_context.policy_map,
+                              /*num_steps=*/ renderer.trajectory_length);
+    renderer.RenderOneTrajectory(trajectory, /*index=*/ i);
+  }
 }
 
 function Spin() {
